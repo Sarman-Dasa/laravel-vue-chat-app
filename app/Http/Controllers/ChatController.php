@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\MessageSent;
 use App\Models\ChatMessage;
 use App\Models\User;
-use Illuminate\Container\Attributes\Log;
 use Illuminate\Http\Request;
 
 class ChatController extends Controller
@@ -22,7 +22,8 @@ class ChatController extends Controller
             $query->where('receiver_id', $id)->where('sender_id', auth()->id());
         })->orWhere(function ($query) use ($id) {
             $query->where('receiver_id', auth()->id())->where('sender_id', $id);
-        })->get();
+        })->with(['sender', 'receiver'])
+        ->orderBy('created_at', 'asc')->get();
 
         return $messages;
     }
@@ -35,7 +36,7 @@ class ChatController extends Controller
             'message' => $request->message,
         ]);
 
-        // broadcast(new MessageSent($message))->toOthers();
+        broadcast(new MessageSent($message))->toOthers();
         return response()->json([
             'message' => $message
         ]);

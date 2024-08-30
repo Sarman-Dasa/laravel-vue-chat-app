@@ -34,9 +34,8 @@
             >
                 Send
             </button>
-            <!-- {{ user.name }} -- -->
         </div>
-        <small v-if="isFriendTyping" class="text-gray-700">
+        <small v-if="isTyping" class="text-gray-700">
             {{ user.name }} is typing...
         </small>
     </div>
@@ -44,7 +43,7 @@
 
 <script setup>
 import axios from 'axios';
-import { onMounted, ref } from 'vue';
+import { nextTick, onMounted, ref, watch } from 'vue';
 
 const props = defineProps({
     user: {
@@ -59,11 +58,50 @@ const props = defineProps({
 
 const messageList = ref([]);
 const message = ref("");
+const isTyping = ref(false);
+const messagesContainer = ref(null);
+const isTypingTimer = ref(null);
+
+const sendTypingEvent = () => {
+    Echo.private(`chat.${props.user.id}`).whisper("typing", {
+        userID: props.currentUser.id,
+    });
+};
+
+watch(
+    messageList,
+    () => {
+        nextTick(() => {
+            messagesContainer.value.scrollTo({
+                top: messagesContainer.value.scrollHeight,
+                behavior: "smooth",
+            });
+        });
+    },
+    { deep: true }
+);
 
 onMounted(() => {
     axios.get(`/messages/${props.user.id}`).then((response) => {
         console.log(response.data);
         messageList.value = response.data;
+    });
+
+    Echo.private(`chat.${props.currentUser.id}`)
+        .listen("MessageSent", (response) => {
+            console.log('response: ', response);
+            messageList.value.push(response.message);
+        })
+        .listenForWhisper("typing", (response) => {
+            isTyping.value = response.userID === props.user.id;
+
+            if (isTypingTimer.value) {
+                clearTimeout(isTypingTimer.value);
+            }
+
+            isTypingTimer.value = setTimeout(() => {
+                isTyping.value = false;
+            }, 1000);
     });
 });
 

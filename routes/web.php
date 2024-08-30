@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ChatController;
+use App\Http\Controllers\UserController;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
 
@@ -9,16 +10,16 @@ Route::get('/', function () {
 });
 
 
-Route::get('/dashboard', function () {
-    return view('dashboard',[
-        'users' => User::whereNot('id', auth()->id())->get()
-    ]);
-})->middleware(['auth'])->name('dashboard');
+Route::group(['middleware' => ['auth']], function () {
+    Route::controller(UserController::class)->group(function() {
+        Route::get('/dashboard','list')->name('dashboard');
+    });
 
-Route::controller(ChatController::class)->group(function () {
-    Route::get('chat/{user}', 'viewChat')->name('chat');
-    Route::get('/messages/{id}','receiveMessages')->name('message');
-    Route::post('sendMessage','sendMessage');
+    Route::controller(ChatController::class)->group(function () {
+        Route::get('chat/{user}', 'viewChat')->name('chat');
+        Route::get('/messages/{id}','receiveMessages')->name('message');
+        Route::post('sendMessage','sendMessage');
+    });
 });
 
 require __DIR__.'/auth.php';
