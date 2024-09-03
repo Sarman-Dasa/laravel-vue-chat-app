@@ -16,12 +16,15 @@ class MessageSent implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
+    public string $type;  // 'sent' or 'updated'
+    public $isSheduleMsg;
     /**
      * Create a new event instance.
      */
-    public function __construct(public ChatMessage $message)
+    public function __construct(public ChatMessage $message, string $type, $isSheduleMsg = false)
     {
-        Log::info('MessageSent Event Triggered: ', ['message' => $this->message]);
+        $this->type = $type;
+        $this->isSheduleMsg = $isSheduleMsg;
     }
     
     /**
@@ -31,8 +34,39 @@ class MessageSent implements ShouldBroadcast
      */
     public function broadcastOn(): array
     {
-        return [
-            new PrivateChannel("chat.{$this->message->receiver_id}"),
+        $channels = [
+            new PrivateChannel("chat.{$this->message->receiver_id}")
         ];
+    
+        if ($this->isSheduleMsg) {
+            $channels[] = new PrivateChannel("chat.{$this->message->sender_id}");
+        }
+    
+        return $channels;
+    }
+    
+
+     /**
+     * Get the data to broadcast.
+     *
+     * @return array
+     */
+    public function broadcastWith(): array
+    {
+        return [
+            'message' => $this->message->toArray(),
+            'type' => $this->type,
+        ];
+    }
+
+    /**
+     * The event's broadcast name.
+     *
+     * @return string
+     */
+    public function broadcastAs(): string
+    {
+        // If you customize the broadcast name using the broadcastAs method, you should make sure to register your listener with a leading . character
+        return 'MessageEvent';
     }
 }

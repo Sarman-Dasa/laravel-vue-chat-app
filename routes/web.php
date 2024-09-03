@@ -19,6 +19,9 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('chat/{user}', 'viewChat')->name('chat');
         Route::get('/messages/{id}','receiveMessages')->name('message');
         Route::post('sendMessage','sendMessage');
+        Route::put('updateMessage/{id}','updateMessage');
+        Route::delete('deleteMessage/{id}','deleteMessage');
+        Route::post('sendScheduleMessage','sendScheduleMessage');
     });
 });
 
