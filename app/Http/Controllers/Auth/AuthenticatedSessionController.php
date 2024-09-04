@@ -42,6 +42,8 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request)
     {
+        auth()->user()->update(['device_token'=>$request->token]);
+       
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();

@@ -12,7 +12,7 @@
                 <SendSheduleMessage :user="user"/>
             </div>
 
-            <div ref="messagesContainer" class="p-4 overflow-y-auto max-h-fit">
+            <div ref="messagesContainer" class="p-4 overflow-y-auto max-h-fit custom-scrollbar">
                 <div v-for="item in messageList" :key="item.id" class="flex items-center mb-2">
                     <div v-if="item.sender_id === currentUser.id" class="relative ml-auto p-2 rounded-lg message"
                         :class="{
@@ -79,6 +79,7 @@
 import axios from "axios";
 import { nextTick, onMounted, ref, watch } from "vue";
 import SendSheduleMessage from "./SendSheduleMessage.vue";
+import { getMessaging , getToken } from 'firebase/messaging'
 
 const props = defineProps({
     user: {
@@ -124,45 +125,17 @@ onMounted(() => {
         messageList.value = response.data;
     });
 
-     // Request permission for browser notifications
-     if (Notification.permission === "default") {
-        Notification.requestPermission();
-      }
+    if (Notification.permission !== 'granted' || props.currentUser?.device_token === null) {
+        getdeviceToken();
+    }
 
     Echo.private(`chat.${props.currentUser.id}`)
         .listen(".MessageEvent", ({ message, type }) => {
-            console.log("call MessageEvent");
+            // console.log("call MessageEvent");
             switch (type) {
                 case "sent":
                     // Listen when new message
                     messageList.value.push(message);
-                    if (document.hidden && Notification.permission === "granted") {
-                        // const notification = new Notification("Reverb Chat App", {
-                        //     body: message.message, // Adjust according to your message structure
-                        //     icon: "/chat-icon.png" // Optional: add a custom icon
-                        // });
-
-                        // // Add an event listener for the click event
-                        // notification.onclick = () => {
-                        //     // Check if the window is already open and bring it to the foreground
-                        //     if (window.focus) {
-                        //         window.focus();
-                        //     } else {
-                        //         // If the window is not open, open it in a new tab
-                        //         window.open(window.location.href);
-                        //     }
-                        // };
-                        // // Close the notification
-                        // notification.close();
-
-                        navigator.serviceWorker.ready.then(function(registration) {
-                            registration.showNotification('Reverb Chat App', {
-                                body: message.message,  // Customize the notification content
-                                icon: "/chat-icon.png",  // Optional: add a custom icon
-                                data: { url: window.location.href }  // Optional: include data like URL
-                            });
-                        });
-                    }
                     break;
 
                 case "updated":
@@ -227,7 +200,7 @@ function sendMessage() {
             messageList.value.push(result.data.message);
         })
         .catch((err) => {
-            console.log("err: ", err);
+            console.log("err: ", err.response.data.message);
         });
 }
 
@@ -285,6 +258,33 @@ function deleteMessage(id) {
             });
     }
 }
+
+async function getdeviceToken() {
+    const permission = await Notification.requestPermission();
+    if (permission === 'granted') {
+        console.log('Notification permission granted.');
+
+        // Get FCM token
+        const vapidKey = import.meta.env.VITE_VAPID_KEY;
+        const messaging = getMessaging();
+        getToken(messaging, { vapidKey: vapidKey }).then((currentToken) => {
+        if (currentToken) {
+            console.log('currentToken: ', currentToken);
+            axios.post('/saveToken', { token: currentToken }).then((result) => {
+                console.log('Token saved successfully.',result);
+            }).catch((err) => {
+                console.log('No registration token available.');
+            });
+        } else {
+            // Show permission request UI
+            console.log('No registration token available. Request permission to generate one.');
+        }
+        }).catch((err) => {
+            console.log('An error occurred while retrieving token. ', err);
+        });
+
+    }
+}
 </script>
 <style>
 .message {
@@ -310,5 +310,26 @@ function deleteMessage(id) {
   color: gray;
   font-size: 12px;
 }
+
+/* Custom scrollbar for the div with the class 'custom-scrollbar' */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: #888;
+    border-radius: 10px;
+    border: 2px solid #f1f1f1;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
 
 </style>

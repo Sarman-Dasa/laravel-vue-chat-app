@@ -73,7 +73,6 @@ const message = ref('');
 const dateTime = ref();
 const now = new Date();
 const minDateTime = ref(now.toISOString().slice(0, 16));
-console.log('minDateTime: ', minDateTime);
 function sendSheduleMessage() {
     let input = {
         user_id: props.user.id,
@@ -87,7 +86,6 @@ function sendSheduleMessage() {
         })
         .catch((err) => {
             console.log("err: ", err.response.data.message);
-            console.log("call");
         });
 }
 

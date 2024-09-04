@@ -30,11 +30,25 @@ Edit `.env` file according to your database credentials.
 php artisan migrate
 ```
 
+### Remove package from vendor this commond
+```
+composer remove laravel/reverb
+```
+
+## install brodcasting
+```
+php artisan install:broadcasting
+```
+
 7. Start development server
 ```
 php artisan serve
 npm run dev:tailwind
-npm install --save-dev laravel-echo
 php artisan reverb:start
 php artisan queue:work
+```
+
+8. Firebase Notification package
+```
+composer require kreait/firebase-php
 ```

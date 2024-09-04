@@ -15,4 +15,10 @@ class UserController extends Controller
             'users' => $user
         ]);
     }
+
+    public function saveToken(Request $request)
+    {
+        auth()->user()->update(['device_token'=>$request->token]);
+        return response()->json(['token saved successfully.']);
+    }
 }

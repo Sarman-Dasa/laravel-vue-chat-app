@@ -5,7 +5,11 @@
  */
 
 import "./bootstrap";
+import { initializeMessageListener } from "./firebase";
 
+
+
+initializeMessageListener();
 /**
  * We will create a fresh Vue application instance.
  */
@@ -26,6 +30,7 @@ const app = createApp({});
 // for (const key in files) {
 //     app.component(key.split("/").pop().split(".")[0], files[key].default);
 // }
+
 
 import ExampleComponent from "./components/ExampleComponent.vue";
 import ChatMessage from "./components/ChatMessage.vue";

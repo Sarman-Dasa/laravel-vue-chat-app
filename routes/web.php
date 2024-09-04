@@ -13,6 +13,7 @@ Route::get('/', function () {
 Route::group(['middleware' => ['auth']], function () {
     Route::controller(UserController::class)->group(function() {
         Route::get('/dashboard','list')->name('dashboard');
+        Route::post('saveToken','saveToken');
     });
 
     Route::controller(ChatController::class)->group(function () {
