@@ -14,6 +14,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::controller(UserController::class)->group(function() {
         Route::get('/dashboard','list')->name('dashboard');
         Route::post('saveToken','saveToken');
+        Route::post('userList','userList');
     });
 
     Route::controller(ChatController::class)->group(function () {
@@ -23,6 +24,8 @@ Route::group(['middleware' => ['auth']], function () {
         Route::put('updateMessage/{id}','updateMessage');
         Route::delete('deleteMessage/{id}','deleteMessage');
         Route::post('sendScheduleMessage','sendScheduleMessage');
+        Route::post('uploadAttachment','uploadAttachment');
+        Route::delete('deleteFile/{message_id}/{file_id}','deleteFile');
     });
 });
 
