@@ -5,11 +5,8 @@
  */
 
 import "./bootstrap";
-import { initializeMessageListener } from "./firebase";
-
-
-
-initializeMessageListener();
+// import { initializeMessageListener } from "./firebase";
+// initializeMessageListener();
 /**
  * We will create a fresh Vue application instance.
  */
@@ -34,9 +31,11 @@ const app = createApp({});
 
 import ExampleComponent from "./components/ExampleComponent.vue";
 import ChatMessage from "./components/ChatMessage.vue";
+import ChatBox from "./components/ChatBox.vue";
 
 app.component("example-component", ExampleComponent);
 app.component("chat-message", ChatMessage);
+app.component("chat-box", ChatBox);
 
 /**
  * Next, attach Vue application instance to the page. Then, you may begin adding components to this application

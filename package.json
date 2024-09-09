@@ -24,6 +24,9 @@
     "dependencies": {
         "@headlessui/vue": "^1.7.22",
         "@heroicons/vue": "^2.1.5",
-        "firebase": "^10.13.1"
+        "emoji-picker-element": "^1.22.4",
+        "firebase": "^10.13.1",
+        "flowbite": "^2.5.1",
+        "flowbite-vue": "^0.1.6"
     }
 }

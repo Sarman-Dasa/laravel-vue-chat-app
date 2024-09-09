@@ -53,8 +53,11 @@ class MessageSent implements ShouldBroadcast
      */
     public function broadcastWith(): array
     {
+        $messageArray = $this->message->toArray();
+        $messageArray['attachments'] = $this->message->attachments()->get()->toArray();
+
         return [
-            'message' => $this->message->toArray(),
+            'message' => $messageArray,
             'type' => $this->type,
         ];
     }

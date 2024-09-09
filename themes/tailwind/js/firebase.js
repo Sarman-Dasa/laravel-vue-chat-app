@@ -1,7 +1,7 @@
 // Import the functions you need from the SDKs you need
 // import { getMessaging, getToken, onMessage } from 'firebase/messaging';
 import { initializeApp } from "firebase/app";
-import { getMessaging, onMessage } from 'firebase/messaging';
+import { getMessaging, onMessage,getToken } from 'firebase/messaging';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -11,12 +11,12 @@ const firebaseConfig = {
     storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
     messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
     appId: import.meta.env.VITE_FIREBASE_APP_ID,
-    measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,  
+    measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const messaging = getMessaging(app);
+const messaging = getMessaging();
 
 export const initializeMessageListener = () => {
     onMessage(messaging, (payload) => {
@@ -29,4 +29,7 @@ export const initializeMessageListener = () => {
         new Notification(notificationTitle, notificationOptions);
     });
 };
+
+export { messaging ,getToken }
+
 

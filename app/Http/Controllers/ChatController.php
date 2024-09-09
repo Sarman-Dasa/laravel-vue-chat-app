@@ -2,18 +2,23 @@
 
 namespace App\Http\Controllers;
 
-use App\Events\MessageSent;
-use App\Events\MessageUpdated;
-use App\Models\ChatMessage;
-use App\Models\User;
 use Exception;
+use App\Models\User;
+use App\Events\MessageSent;
+use App\Models\ChatMessage;
+use App\Traits\ManageFiles;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 use Kreait\Firebase\Factory;
+use App\Events\MessageUpdated;
+use App\Models\ChatAttachment;
+use Illuminate\Support\Facades\Log;
 use Kreait\Firebase\Messaging\CloudMessage;
 
 class ChatController extends Controller
 {
+
+    use ManageFiles;
 
     public function viewChat(User $user) {
         return view('chat',[
@@ -28,7 +33,7 @@ class ChatController extends Controller
         })->orWhere(function ($query) use ($id) {
             $query->where('receiver_id', auth()->id())->where('sender_id', $id);
         })
-        ->with(['sender', 'receiver'])
+        ->with(['sender', 'receiver','attachments'])
         ->orderBy('created_at', 'asc')->get();
 
         return $messages;
@@ -39,7 +44,8 @@ class ChatController extends Controller
 
         $request->validate([
             'user_id' => 'required|exists:users,id',
-            'message' => 'required|string|max:1000',
+            'message' => 'nullable|string|max:1000',
+            'files.*' => 'nullable|mimes:jpg,jpeg,png',
         ]);
 
         $message = ChatMessage::create([
@@ -49,12 +55,36 @@ class ChatController extends Controller
             'is_sent' => true,
         ]);
 
+        $newAttachment = [];
+        if ($request->hasFile('files')) {
+            foreach ($request->file('files') as $file) {
+                $newAttachment[] = [
+                    'file_path' => $this->uploadFile($file, 'uploads/chat_attachments'),
+                    'file_name' => $file->getClientOriginalName(),
+                ];
+            }
+        }
+
+        if ($request->hasFile('audio')) {
+            $file = $request->file('audio');
+            $fileName = pathinfo($file ->getClientOriginalName(), PATHINFO_FILENAME);
+            $uniqueFileName = $fileName . Str::random(3) . '.mp3';
+            $newAttachment[] = [
+                'file_path' => $this->uploadFile($file, 'uploads/chat_audio',true),
+                'file_name' => $uniqueFileName,
+                'is_audio_file' => true
+            ];
+        }
+
+        $message->attachments()->createMany($newAttachment);
+
+
         broadcast(new MessageSent($message,'sent'))->toOthers();
 
         $token = $message->receiver->device_token;
         $this->sendPushNotification('New message in laravel-vue-app',$request->message,$token);
         return response()->json([
-            'message' => $message
+            'message' => $message->load('attachments')
         ]);
     }
 
@@ -106,6 +136,38 @@ class ChatController extends Controller
             'message' => 'Message scheduled successfully.',
             'scheduled_message' => $scheduledMessage
         ]);
+    }
+
+    public function uploadAttachment(Request $request) {
+
+        $request->validate([
+            'files.*' => 'required|file|mimes:jpg,jpeg,png,pdf,doc,docx,xls,xlsx,txt|max:2048',
+        ]);
+    }
+
+    public function deleteFile($message_id,$file_id) {
+
+        $chatMessage = ChatMessage::findOrFail($message_id);
+
+        $file = $chatMessage->attachments()->where('id',$file_id)->first();
+        if($file) {
+            $this->deleteMessageFile($file->file_path);
+            $file->delete();
+        }
+
+        $count = $chatMessage->attachments()->count();
+        if($count == 0) {
+            $chatMessage->delete();
+            broadcast(new MessageSent($chatMessage,'deleted'));
+        }
+        else {
+            broadcast(new MessageSent($chatMessage,'updated'));
+        }
+
+        return response()->json([
+            'message' => $chatMessage->load('attachments')
+        ]);
+
     }
 
     private function sendPushNotification($title,$message,$device_token)
